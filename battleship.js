@@ -73,9 +73,13 @@ class BattleshipGame {
     this.computerBoard = new GameBoard();
     this.setupEventListeners();
     this.lastHitShip = null;
-    this.notificationDuration = 2500;
+    this.notificationDuration = 1300;
     this.shipsAreVertical = false;
     this.isPlayerTurn = true;
+    this.gameOver = false;
+    this.lastHit = null; //stores last successful hit
+    this.hitStack = [];
+    this.currentDirection = null;
   }
 
   setupEventListeners() {
@@ -323,14 +327,14 @@ class BattleshipGame {
         setTimeout(() => {
           document.body.removeChild(notification);
           resolve();
-        }, 250);
-      }, 850);
+        }, 400);
+      }, 900);
     });
   }
 
   async handlePlayerAttack(e) {
-    if (!this.isPlayerTurn) {
-      return; // Ignore clicks when it's not the player's turn
+    if (!this.isPlayerTurn || this.gameOver) {
+      return; // Ignore clicks when it's not the player's turn or the game is over
     }
 
     if (
@@ -362,20 +366,18 @@ class BattleshipGame {
         this.endGame("Player");
       } else {
         document.getElementById("message").textContent = "Computer's turn...";
-        setTimeout(() => this.computerPlay(), 1000); // Add a delay before computer's move
+        setTimeout(() => this.computerPlay(), 350); // Add a delay before computer's move
       }
     }
   }
 
   async computerPlay() {
     let row, col;
-    do {
-      row = Math.floor(Math.random() * 10);
-      col = Math.floor(Math.random() * 10);
-    } while (
-      this.playerBoard.board[row][col] === "hit" ||
-      this.playerBoard.board[row][col] === "miss"
-    );
+    if (this.lastHit) {
+      ({ row, col } = this.getSmartAttackCoordinates());
+    } else {
+      ({ row, col } = this.getRandomAttackCoordinates());
+    }
 
     const result = this.playerBoard.receiveAttack(row, col);
     const cell = document.querySelector(
@@ -389,27 +391,141 @@ class BattleshipGame {
 
       if (hitShip.isSunk()) {
         await this.showNotification("Your ship was sunk!", "sunk");
+        this.resetAttackStrategy(); // Reset strategy after sinking a ship
+      } else {
+        this.updateAttackStrategy(row, col);
       }
     } else {
       await this.showNotification("Computer missed!", "miss");
+      this.adjustAttackStrategy();
     }
 
     if (this.playerBoard.allShipsSunk()) {
       this.endGame("Computer");
     } else {
-      this.isPlayerTurn = true; // Re-enable player moves
+      this.isPlayerTurn = true;
       document.getElementById("message").textContent = "Your turn to attack!";
     }
   }
 
+  getRandomAttackCoordinates() {
+    let row, col;
+    do {
+      row = Math.floor(Math.random() * 10);
+      col = Math.floor(Math.random() * 10);
+    } while (
+      this.playerBoard.board[row][col] === "hit" ||
+      this.playerBoard.board[row][col] === "miss"
+    );
+    return { row, col };
+  }
+
+  getSmartAttackCoordinates() {
+    const { row, col } = this.lastHit;
+    const directions = [
+      { dx: 0, dy: 1 }, // right
+      { dx: 1, dy: 0 }, // down
+      { dx: 0, dy: -1 }, // left
+      { dx: -1, dy: 0 }, // up
+    ];
+
+    if (this.currentDirection === null) {
+      // Try all directions
+      for (let dir of directions) {
+        const newRow = row + dir.dx;
+        const newCol = col + dir.dy;
+        if (this.isValidAttack(newRow, newCol)) {
+          return { row: newRow, col: newCol };
+        }
+      }
+    } else {
+      // Continue in the current direction
+      const newRow = row + directions[this.currentDirection].dx;
+      const newCol = col + directions[this.currentDirection].dy;
+      if (this.isValidAttack(newRow, newCol)) {
+        return { row: newRow, col: newCol };
+      }
+    }
+
+    // If we can't continue, backtrack or reset
+    if (this.hitStack.length > 0) {
+      this.lastHit = this.hitStack.pop();
+      this.currentDirection = null;
+      return this.getSmartAttackCoordinates();
+    } else {
+      this.resetAttackStrategy();
+      return this.getRandomAttackCoordinates();
+    }
+  }
+
+  isValidAttack(row, col) {
+    return (
+      row >= 0 &&
+      row < 10 &&
+      col >= 0 &&
+      col < 10 &&
+      this.playerBoard.board[row][col] !== "hit" &&
+      this.playerBoard.board[row][col] !== "miss"
+    );
+  }
+
+  updateAttackStrategy(row, col) {
+    if (!this.lastHit) {
+      this.lastHit = { row, col };
+    } else {
+      this.hitStack.push(this.lastHit);
+      this.lastHit = { row, col };
+      if (this.currentDirection === null) {
+        // Determine the direction
+        const dx = row - this.hitStack[this.hitStack.length - 1].row;
+        const dy = col - this.hitStack[this.hitStack.length - 1].col;
+        if (dx === 1) this.currentDirection = 1; // down
+        else if (dx === -1) this.currentDirection = 3; // up
+        else if (dy === 1) this.currentDirection = 0; // right
+        else if (dy === -1) this.currentDirection = 2; // left
+      }
+    }
+  }
+
+  adjustAttackStrategy() {
+    if (this.currentDirection !== null) {
+      // Change direction
+      this.currentDirection = (this.currentDirection + 1) % 4;
+      if (this.hitStack.length > 0) {
+        this.lastHit = this.hitStack[this.hitStack.length - 1];
+      } else {
+        this.resetAttackStrategy();
+      }
+    }
+  }
+
+  resetAttackStrategy() {
+    this.lastHit = null;
+    this.hitStack = [];
+    this.currentDirection = null;
+  }
+
   endGame(winner) {
-    this.isPlayerTurn = false; // Disable further moves
+    this.gameOver = true; // Set the game as over
+    this.isPlayerTurn = false; // Ensure player moves are disabled
     document.getElementById(
       "message"
     ).textContent = `Game Over! ${winner} wins!`;
-    document
-      .getElementById("computer-board")
-      .removeEventListener("click", this.handlePlayerAttack);
+
+    // Optionally, you can visually disable the computer's board
+    const computerBoard = document.getElementById("computer-board");
+    computerBoard.style.pointerEvents = "none";
+    computerBoard.style.opacity = "0.7";
+
+    // You could also add a "Play Again" button here if desired
+    const playAgainButton = document.createElement("button");
+    playAgainButton.textContent = "Play Again";
+    playAgainButton.addEventListener("click", () => this.resetGame());
+    document.getElementById("game-container").appendChild(playAgainButton);
+  }
+
+  resetGame() {
+    location.reload(); // Reload the page to reset everything
   }
 }
 
