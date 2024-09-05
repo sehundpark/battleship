@@ -75,6 +75,7 @@ class BattleshipGame {
     this.lastHitShip = null;
     this.notificationDuration = 2500;
     this.shipsAreVertical = false;
+    this.isPlayerTurn = true;
   }
 
   setupEventListeners() {
@@ -271,23 +272,6 @@ class BattleshipGame {
     }
   }
 
-  startGame() {
-    // Hide the "Ready to play" button
-    document.getElementById("ready-to-play").style.display = "none";
-
-    // Clear any setup messages
-    document.getElementById("message").textContent = "";
-
-    // Show the computer's board
-    document.getElementById("computer-board-container").style.display = "block";
-
-    document.getElementById("message").textContent =
-      "Game started! It's your turn to attack.";
-
-    this.placeComputerShips();
-    this.play();
-  }
-
   placeComputerShips() {
     const shipLengths = [5, 4, 3, 3, 2];
     shipLengths.forEach((length) => {
@@ -304,6 +288,16 @@ class BattleshipGame {
         );
       }
     });
+  }
+
+  startGame() {
+    document.getElementById("ready-to-play").style.display = "none";
+    document.getElementById("message").textContent = "";
+    document.getElementById("computer-board-container").style.display = "block";
+    document.getElementById("message").textContent =
+      "Game started! It's your turn to attack.";
+    this.placeComputerShips();
+    this.play();
   }
 
   play() {
@@ -330,16 +324,24 @@ class BattleshipGame {
           document.body.removeChild(notification);
           resolve();
         }, 250);
-      }, 1000);
+      }, 850);
     });
   }
 
   async handlePlayerAttack(e) {
+    if (!this.isPlayerTurn) {
+      return; // Ignore clicks when it's not the player's turn
+    }
+
     if (
       e.target.classList.contains("cell") &&
       !e.target.classList.contains("hit") &&
       !e.target.classList.contains("miss")
     ) {
+      this.isPlayerTurn = false; // Disable further player moves
+      document.getElementById("message").textContent =
+        "Processing your move...";
+
       const row = parseInt(e.target.dataset.row);
       const col = parseInt(e.target.dataset.col);
       const result = this.computerBoard.receiveAttack(row, col);
@@ -352,13 +354,15 @@ class BattleshipGame {
         if (hitShip.isSunk()) {
           await this.showNotification("Ship sunk!", "sunk");
         }
+      } else {
+        await this.showNotification("Miss!", "miss");
       }
 
       if (this.computerBoard.allShipsSunk()) {
         this.endGame("Player");
       } else {
-        // Computer's turn after notifications are done
-        setTimeout(() => this.computerPlay(), 500);
+        document.getElementById("message").textContent = "Computer's turn...";
+        setTimeout(() => this.computerPlay(), 1000); // Add a delay before computer's move
       }
     }
   }
@@ -386,14 +390,20 @@ class BattleshipGame {
       if (hitShip.isSunk()) {
         await this.showNotification("Your ship was sunk!", "sunk");
       }
+    } else {
+      await this.showNotification("Computer missed!", "miss");
     }
 
     if (this.playerBoard.allShipsSunk()) {
       this.endGame("Computer");
+    } else {
+      this.isPlayerTurn = true; // Re-enable player moves
+      document.getElementById("message").textContent = "Your turn to attack!";
     }
   }
 
   endGame(winner) {
+    this.isPlayerTurn = false; // Disable further moves
     document.getElementById(
       "message"
     ).textContent = `Game Over! ${winner} wins!`;

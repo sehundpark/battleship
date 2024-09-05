@@ -165,6 +165,10 @@ button {
   background-color: rgba(0, 0, 255, 0.8);
 }
 
+.notification.miss {
+  background-color: rgba(128, 128, 128, 0.8);
+}
+
 .game-board {
   display: inline-grid;
   grid-template-columns: repeat(10, 30px);
