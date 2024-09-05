@@ -71,10 +71,27 @@ class BattleshipGame {
   constructor() {
     this.playerBoard = new GameBoard();
     this.computerBoard = new GameBoard();
-    this.setupGame();
+    this.setupEventListeners();
+    this.lastHitShip = null;
+    this.notificationDuration = 2500;
+    this.shipsAreVertical = false;
   }
 
-  setupGame() {
+  setupEventListeners() {
+    document
+      .getElementById("start-game")
+      .addEventListener("click", () => this.startSetup());
+    document
+      .getElementById("ready-to-play")
+      .addEventListener("click", () => this.startGame());
+    document
+      .getElementById("rotate-ships")
+      .addEventListener("click", () => this.rotateAllShips());
+  }
+
+  startSetup() {
+    document.getElementById("start-game").style.display = "none";
+    document.getElementById("game-content").style.display = "flex";
     this.renderBoards();
     this.createShips();
     this.setupDragAndDrop();
@@ -83,15 +100,43 @@ class BattleshipGame {
   createShips() {
     const shipLengths = [5, 4, 3, 3, 2];
     const shipContainer = document.getElementById("ship-container");
+    shipContainer.innerHTML = ""; // Clear any existing ships
     shipLengths.forEach((length, index) => {
       const ship = document.createElement("div");
       ship.className = "ship";
       ship.id = `ship-${index}`;
       ship.draggable = true;
-      ship.style.width = `${length * 30}px`;
-      ship.style.height = "30px";
       ship.dataset.length = length;
+
+      for (let i = 0; i < length; i++) {
+        const cell = document.createElement("div");
+        cell.className = "ship-cell";
+        ship.appendChild(cell);
+      }
+
       shipContainer.appendChild(ship);
+    });
+    this.updateShipsOrientation();
+  }
+
+  rotateAllShips() {
+    this.shipsAreVertical = !this.shipsAreVertical;
+    this.updateShipsOrientation();
+  }
+
+  updateShipsOrientation() {
+    const ships = document.querySelectorAll("#ship-container .ship");
+    ships.forEach((ship) => {
+      const length = parseInt(ship.dataset.length);
+      if (this.shipsAreVertical) {
+        ship.style.flexDirection = "column";
+        ship.style.width = "30px";
+        ship.style.height = `${length * 30}px`;
+      } else {
+        ship.style.flexDirection = "row";
+        ship.style.width = `${length * 30}px`;
+        ship.style.height = "30px";
+      }
     });
   }
 
@@ -111,6 +156,13 @@ class BattleshipGame {
 
   dragStart(e) {
     e.dataTransfer.setData("text/plain", e.target.id);
+    const rect = e.target.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    e.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({ offsetX, offsetY })
+    );
   }
 
   dragOver(e) {
@@ -122,22 +174,82 @@ class BattleshipGame {
     const shipId = e.dataTransfer.getData("text");
     const ship = document.getElementById(shipId);
     const length = parseInt(ship.dataset.length);
-    const row = parseInt(e.target.dataset.row);
-    const col = parseInt(e.target.dataset.col);
-    const isVertical = false; // For simplicity, we'll only allow horizontal placement
 
-    if (this.playerBoard.placeShip(new Ship(length), row, col, isVertical)) {
-      for (let i = 0; i < length; i++) {
-        const cell = document.querySelector(
-          `#player-board .cell[data-row="${row}"][data-col="${col + i}"]`
-        );
-        cell.classList.add("ship-cell");
+    const { offsetX, offsetY } = JSON.parse(
+      e.dataTransfer.getData("application/json")
+    );
+
+    const cellSize = 30;
+    const dropX = e.clientX - offsetX - e.target.getBoundingClientRect().left;
+    const dropY = e.clientY - offsetY - e.target.getBoundingClientRect().top;
+
+    const startCol = Math.floor(dropX / cellSize);
+    const startRow = Math.floor(dropY / cellSize);
+
+    const row =
+      parseInt(e.target.dataset.row) + (this.shipsAreVertical ? startRow : 0);
+    const col =
+      parseInt(e.target.dataset.col) + (this.shipsAreVertical ? 0 : startCol);
+
+    if (this.canPlaceShip(length, row, col, this.shipsAreVertical)) {
+      this.placeShip(ship, length, row, col, this.shipsAreVertical);
+    }
+  }
+
+  canPlaceShip(length, row, col, isVertical) {
+    for (let i = 0; i < length; i++) {
+      const checkRow = isVertical ? row + i : row;
+      const checkCol = isVertical ? col : col + i;
+
+      if (
+        checkRow >= this.playerBoard.size ||
+        checkCol >= this.playerBoard.size
+      ) {
+        return false;
       }
-      ship.remove();
-      if (document.querySelectorAll("#ship-container .ship").length === 0) {
-        this.startGame();
+
+      const cell = document.querySelector(
+        `#player-board .cell[data-row="${checkRow}"][data-col="${checkCol}"]`
+      );
+
+      if (!cell || cell.classList.contains("ship-cell")) {
+        return false;
       }
     }
+    return true;
+  }
+
+  placeShip(shipElement, length, row, col, isVertical) {
+    for (let i = 0; i < length; i++) {
+      const cellRow = isVertical ? row + i : row;
+      const cellCol = isVertical ? col : col + i;
+      const cell = document.querySelector(
+        `#player-board .cell[data-row="${cellRow}"][data-col="${cellCol}"]`
+      );
+      cell.classList.add("ship-cell");
+    }
+
+    this.playerBoard.placeShip(new Ship(length), row, col, isVertical);
+    shipElement.remove();
+
+    if (document.querySelectorAll("#ship-container .ship").length === 0) {
+      this.allShipsPlaced();
+    }
+  }
+
+  allShipsPlaced() {
+    // Remove the entire ship setup container
+    const shipSetup = document.getElementById("ship-setup");
+    if (shipSetup) {
+      shipSetup.remove();
+    }
+
+    // Show the "Ready to play" button
+    document.getElementById("ready-to-play").style.display = "block";
+
+    const message = document.getElementById("message");
+    message.textContent =
+      "All ships placed! Click 'Ready to play' to start the game.";
   }
 
   renderBoards() {
@@ -160,8 +272,18 @@ class BattleshipGame {
   }
 
   startGame() {
-    document.getElementById("ship-container").style.display = "none";
-    document.getElementById("start-game").style.display = "none";
+    // Hide the "Ready to play" button
+    document.getElementById("ready-to-play").style.display = "none";
+
+    // Clear any setup messages
+    document.getElementById("message").textContent = "";
+
+    // Show the computer's board
+    document.getElementById("computer-board-container").style.display = "block";
+
+    document.getElementById("message").textContent =
+      "Game started! It's your turn to attack.";
+
     this.placeComputerShips();
     this.play();
   }
@@ -190,7 +312,29 @@ class BattleshipGame {
       .addEventListener("click", this.handlePlayerAttack.bind(this));
   }
 
-  handlePlayerAttack(e) {
+  showNotification(message, type) {
+    return new Promise((resolve) => {
+      const notification = document.createElement("div");
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      // Trigger reflow to ensure the transition works
+      notification.offsetHeight;
+
+      notification.classList.add("show");
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => {
+          document.body.removeChild(notification);
+          resolve();
+        }, 250);
+      }, 1000);
+    });
+  }
+
+  async handlePlayerAttack(e) {
     if (
       e.target.classList.contains("cell") &&
       !e.target.classList.contains("hit") &&
@@ -200,15 +344,26 @@ class BattleshipGame {
       const col = parseInt(e.target.dataset.col);
       const result = this.computerBoard.receiveAttack(row, col);
       e.target.classList.add(result);
+
+      if (result === "hit") {
+        const hitShip = this.computerBoard.board[row][col];
+        await this.showNotification("Ship hit!", "hit");
+
+        if (hitShip.isSunk()) {
+          await this.showNotification("Ship sunk!", "sunk");
+        }
+      }
+
       if (this.computerBoard.allShipsSunk()) {
         this.endGame("Player");
       } else {
-        this.computerPlay();
+        // Computer's turn after notifications are done
+        setTimeout(() => this.computerPlay(), 500);
       }
     }
   }
 
-  computerPlay() {
+  async computerPlay() {
     let row, col;
     do {
       row = Math.floor(Math.random() * 10);
@@ -223,6 +378,15 @@ class BattleshipGame {
       `#player-board .cell[data-row="${row}"][data-col="${col}"]`
     );
     cell.classList.add(result);
+
+    if (result === "hit") {
+      const hitShip = this.playerBoard.board[row][col];
+      await this.showNotification("Your ship was hit!", "hit");
+
+      if (hitShip.isSunk()) {
+        await this.showNotification("Your ship was sunk!", "sunk");
+      }
+    }
 
     if (this.playerBoard.allShipsSunk()) {
       this.endGame("Computer");
@@ -239,6 +403,7 @@ class BattleshipGame {
   }
 }
 
-document.getElementById("start-game").addEventListener("click", () => {
+// Initialize the game when the page loads
+document.addEventListener("DOMContentLoaded", () => {
   new BattleshipGame();
 });
