@@ -3,10 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Battleship</title>
+    <title>Battleship Game</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <scripts src="main.js"></scripts>
+    <div id="game-container">
+      <h1>Battleship</h1>
+      <div id="setup-container">
+        <div id="ship-container"></div>
+        <div class="board-wrapper">
+          <h2>Your Board</h2>
+          <div id="player-board" class="game-board"></div>
+        </div>
+      </div>
+      <div class="board-wrapper">
+        <h2>Computer's Board</h2>
+        <div id="computer-board" class="game-board"></div>
+      </div>
+      <div id="message"></div>
+      <button id="start-game">Start Game</button>
+    </div>
+    <script src="battleship.js" type="module"></script>
   </body>
 </html>
