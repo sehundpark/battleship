@@ -17,8 +17,39 @@ body {
 
 #game-content {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.board-wrapper {
+  margin: 0 10px;
+}
+
+#log-container {
+  width: 250px;
+  margin: 0 20px;
+}
+
+#game-log {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #fff;
+  font-size: 14px;
+}
+
+.log-entry {
+  margin-bottom: 5px;
+}
+
+.log-entry.player {
+  color: #0000ff;
+}
+
+.log-entry.computer {
+  color: #ff0000;
 }
 
 #setup-container,
@@ -70,10 +101,6 @@ body {
   justify-content: center;
   align-items: flex-start;
   flex-wrap: wrap;
-}
-
-.board-wrapper {
-  margin: 0 10px;
 }
 
 .game-board {
@@ -152,38 +179,6 @@ button {
 
 #ready-to-play:hover {
   background-color: #45a049;
-}
-
-.notification {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px 25px;
-  border-radius: 5px;
-  font-size: 20px;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-  text-align: center;
-  z-index: 1000;
-}
-
-.notification.show {
-  opacity: 1;
-}
-
-.notification.hit {
-  background-color: rgba(255, 0, 0, 0.8);
-}
-
-.notification.sunk {
-  background-color: rgba(0, 0, 255, 0.8);
-}
-
-.notification.miss {
-  background-color: rgba(128, 128, 128, 0.8);
 }
 
 .game-board {

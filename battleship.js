@@ -82,6 +82,7 @@ class BattleshipGame {
     this.isPlayerTurn = true;
     this.gameOver = false;
     this.shipsAreVertical = false;
+    this.gameLog = document.getElementById("game-log");
   }
 
   setupEventListeners() {
@@ -313,20 +314,25 @@ class BattleshipGame {
 
       if (result === "hit") {
         const hitShip = this.computerBoard.board[row][col];
-        await this.showNotification("Ship hit!", "hit");
+        this.log(`Player hit a ship at (${row}, ${col})!`, "player");
 
         if (hitShip.isSunk()) {
-          await this.showNotification("Ship sunk!", "sunk");
+          this.log("Player sunk a ship!", "player");
         }
       } else {
-        await this.showNotification("Miss!", "miss");
+        this.log(`Player missed at (${row}, ${col}).`, "player");
       }
 
       if (this.computerBoard.allShipsSunk()) {
         this.endGame("Player");
       } else {
-        document.getElementById("message").textContent = "Computer's turn...";
-        setTimeout(() => this.computerPlay(), 1000);
+        // Increase the delay here
+        document.getElementById("message").textContent =
+          "Computer is thinking...";
+        setTimeout(() => {
+          document.getElementById("message").textContent = "Computer's turn...";
+          this.computerPlay();
+        }, 500);
       }
     }
   }
@@ -347,17 +353,20 @@ class BattleshipGame {
 
     if (result === "hit") {
       const hitShip = this.playerBoard.board[row][col];
-      await this.showNotification("Your ship was hit!", "hit");
+      this.log(`Computer hit a ship at (${row}, ${col})!`, "computer");
 
       if (hitShip.isSunk()) {
-        await this.showNotification("Your ship was sunk!", "sunk");
+        this.log("Computer sunk a ship!", "computer");
         this.resetAttackStrategy();
       } else {
         this.updateAttackStrategy(row, col);
       }
     } else {
-      await this.showNotification("Computer missed!", "miss");
-      this.adjustAttackStrategy();
+      this.log(`Computer missed at (${row}, ${col}).`, "computer");
+      // Instead of calling adjustAttackStrategy, we'll just reset if we're in the middle of a smart attack
+      if (this.lastHit) {
+        this.resetAttackStrategy();
+      }
     }
 
     if (this.playerBoard.allShipsSunk()) {
@@ -366,6 +375,14 @@ class BattleshipGame {
       this.isPlayerTurn = true;
       document.getElementById("message").textContent = "Your turn to attack!";
     }
+  }
+
+  log(message, player) {
+    const logEntry = document.createElement("div");
+    logEntry.className = `log-entry ${player}`;
+    logEntry.textContent = message;
+    this.gameLog.appendChild(logEntry);
+    this.gameLog.scrollTop = this.gameLog.scrollHeight;
   }
 
   getRandomAttackCoordinates() {
@@ -470,28 +487,6 @@ class BattleshipGame {
     playAgainButton.textContent = "Play Again";
     playAgainButton.addEventListener("click", () => this.resetGame());
     document.getElementById("game-container").appendChild(playAgainButton);
-  }
-
-  showNotification(message, type) {
-    return new Promise((resolve) => {
-      const notification = document.createElement("div");
-      notification.className = `notification ${type}`;
-      notification.textContent = message;
-      document.body.appendChild(notification);
-
-      // Trigger reflow to ensure the transition works
-      notification.offsetHeight;
-
-      notification.classList.add("show");
-
-      setTimeout(() => {
-        notification.classList.remove("show");
-        setTimeout(() => {
-          document.body.removeChild(notification);
-          resolve();
-        }, 500);
-      }, 2000);
-    });
   }
 
   resetGame() {
