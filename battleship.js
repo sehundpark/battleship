@@ -107,8 +107,6 @@ class BattleshipGame {
     this.computerBoard = new GameBoard(10, false);
     this.setupEventListeners();
     this.lastHit = null;
-    this.hitStack = [];
-    this.currentDirection = null;
     this.isPlayerTurn = true;
     this.gameOver = false;
     this.shipsAreVertical = false;
@@ -124,7 +122,7 @@ class BattleshipGame {
       .addEventListener("click", () => this.startGame());
     document
       .getElementById("rotate-ships")
-      .addEventListener("click", () => this.rotateAllShips());
+      .addEventListener("click", () => this.rotateShips());
   }
 
   startSetup() {
@@ -373,23 +371,27 @@ class BattleshipGame {
     const cell = document.querySelector(
       `#player-board .cell[data-row="${row}"][data-col="${col}"]`
     );
-    cell.classList.add(result);
 
-    if (result === "hit") {
-      this.log(`Computer hit a ship at (${row}, ${col})!`, "computer");
+    if (cell) {
+      // Update the cell's appearance based on the attack result
+      if (result === "hit") {
+        cell.classList.add("hit");
+        this.log(`Computer hit a ship at (${row}, ${col})!`, "computer");
 
-      if (ship && ship.isSunk()) {
-        this.log("Computer sunk a ship!", "computer");
-        this.markSunkenShip(ship, true); // true indicates it's the player's board
-        this.resetAttackStrategy();
+        if (ship && ship.isSunk()) {
+          this.log("Computer sunk a ship!", "computer");
+          this.markSunkenShip(ship, true); // true indicates it's the player's board
+          this.resetAttackStrategy();
+        } else {
+          this.updateAttackStrategy(row, col);
+        }
       } else {
-        this.updateAttackStrategy(row, col);
+        cell.classList.add("miss");
+        this.log(`Computer missed at (${row}, ${col}).`, "computer");
+        this.lastHit = null; // Reset lastHit on a miss
       }
     } else {
-      this.log(`Computer missed at (${row}, ${col}).`, "computer");
-      if (this.lastHit) {
-        this.resetAttackStrategy();
-      }
+      console.error(`Cell not found for coordinates (${row}, ${col})`);
     }
 
     if (this.playerBoard.allShipsSunk()) {
@@ -398,6 +400,51 @@ class BattleshipGame {
       this.isPlayerTurn = true;
       document.getElementById("message").textContent = "Your turn to attack!";
     }
+  }
+
+  getSmartAttackCoordinates() {
+    if (!this.lastHit) {
+      return this.getRandomAttackCoordinates();
+    }
+
+    const { row, col } = this.lastHit;
+    const directions = [
+      { dx: 0, dy: 1 }, // right
+      { dx: 1, dy: 0 }, // down
+      { dx: 0, dy: -1 }, // left
+      { dx: -1, dy: 0 }, // up
+    ];
+
+    for (let dir of directions) {
+      const newRow = row + dir.dx;
+      const newCol = col + dir.dy;
+      if (this.isValidAttack(newRow, newCol)) {
+        return { row: newRow, col: newCol };
+      }
+    }
+
+    // If no valid direction, reset and get random coordinates
+    this.resetAttackStrategy();
+    return this.getRandomAttackCoordinates();
+  }
+
+  isValidAttack(row, col) {
+    return (
+      row >= 0 &&
+      row < this.playerBoard.size &&
+      col >= 0 &&
+      col < this.playerBoard.size &&
+      this.playerBoard.board[row][col] !== "hit" &&
+      this.playerBoard.board[row][col] !== "miss"
+    );
+  }
+
+  updateAttackStrategy(row, col) {
+    this.lastHit = { row, col };
+  }
+
+  resetAttackStrategy() {
+    this.lastHit = null;
   }
 
   log(message, player) {
@@ -418,79 +465,6 @@ class BattleshipGame {
       this.playerBoard.board[row][col] === "miss"
     );
     return { row, col };
-  }
-
-  getSmartAttackCoordinates() {
-    const { row, col } = this.lastHit;
-    const directions = [
-      { dx: 0, dy: 1 }, // right
-      { dx: 1, dy: 0 }, // down
-      { dx: 0, dy: -1 }, // left
-      { dx: -1, dy: 0 }, // up
-    ];
-
-    if (this.currentDirection === null) {
-      // Try all directions
-      for (let dir of directions) {
-        const newRow = row + dir.dx;
-        const newCol = col + dir.dy;
-        if (this.isValidAttack(newRow, newCol)) {
-          return { row: newRow, col: newCol };
-        }
-      }
-    } else {
-      // Continue in the current direction
-      const newRow = row + directions[this.currentDirection].dx;
-      const newCol = col + directions[this.currentDirection].dy;
-      if (this.isValidAttack(newRow, newCol)) {
-        return { row: newRow, col: newCol };
-      }
-    }
-
-    // If we can't continue, backtrack or reset
-    if (this.hitStack.length > 0) {
-      this.lastHit = this.hitStack.pop();
-      this.currentDirection = null;
-      return this.getSmartAttackCoordinates();
-    } else {
-      this.resetAttackStrategy();
-      return this.getRandomAttackCoordinates();
-    }
-  }
-
-  isValidAttack(row, col) {
-    return (
-      row >= 0 &&
-      row < 10 &&
-      col >= 0 &&
-      col < 10 &&
-      this.playerBoard.board[row][col] !== "hit" &&
-      this.playerBoard.board[row][col] !== "miss"
-    );
-  }
-
-  updateAttackStrategy(row, col) {
-    if (!this.lastHit) {
-      this.lastHit = { row, col };
-    } else {
-      this.hitStack.push(this.lastHit);
-      this.lastHit = { row, col };
-      if (this.currentDirection === null) {
-        // Determine the direction
-        const dx = row - this.hitStack[this.hitStack.length - 1].row;
-        const dy = col - this.hitStack[this.hitStack.length - 1].col;
-        if (dx === 1) this.currentDirection = 1; // down
-        else if (dx === -1) this.currentDirection = 3; // up
-        else if (dy === 1) this.currentDirection = 0; // right
-        else if (dy === -1) this.currentDirection = 2; // left
-      }
-    }
-  }
-
-  resetAttackStrategy() {
-    this.lastHit = null;
-    this.hitStack = [];
-    this.currentDirection = null;
   }
 
   endGame(winner) {
@@ -521,8 +495,4 @@ class BattleshipGame {
 // Initialize the game when the page loads
 document.addEventListener("DOMContentLoaded", () => {
   const game = new BattleshipGame();
-  game.createShips();
-  document
-    .getElementById("rotate-ships")
-    .addEventListener("click", () => game.rotateShips());
 });

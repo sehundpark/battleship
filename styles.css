@@ -203,6 +203,14 @@ body {
   background-color: #00f;
 }
 
+.cell.hit {
+  background-color: #f00; /* Red for hits */
+}
+
+.cell.miss {
+  background-color: #00f; /* Blue for misses */
+}
+
 button {
   font-size: 16px;
   padding: 10px 20px;
