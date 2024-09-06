@@ -340,7 +340,7 @@ class BattleshipGame {
         setTimeout(() => {
           document.getElementById("message").textContent = "Computer's turn...";
           this.computerPlay();
-        }, 2000);
+        }, 750);
       }
     }
   }
