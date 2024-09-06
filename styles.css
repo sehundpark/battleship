@@ -76,6 +76,36 @@ body {
   display: flex;
   margin: 2px 2px;
   cursor: move;
+  background-color: #999;
+  border: 1px solid #000;
+}
+
+#ship-container .ship {
+  display: flex;
+  margin: 5px 0;
+  cursor: move;
+}
+
+#ship-container .ship-cell {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #000;
+  background-color: #999;
+  box-sizing: border-box;
+}
+
+#ship-container .ship.vertical {
+  flex-direction: column;
+}
+
+#ship-container .ship.horizontal {
+  flex-direction: row;
+}
+
+/* Styles for ships on the board */
+.cell.ship {
+  background-color: #999;
+  border: 1px solid #000;
 }
 
 .rotate-button {
@@ -94,6 +124,17 @@ body {
 #computer-board-container {
   display: none;
   margin-left: 20px;
+}
+
+/* Only show ships on the player's board */
+#computer-board .ship {
+  background-color: transparent;
+  border: none;
+}
+
+#computer-board .cell:not(.hit):not(.miss) {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
 }
 
 #game-content {
@@ -117,30 +158,40 @@ body {
   height: 28px;
   border: 1px solid #ddd;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden; /* Ensure content doesn't overflow */
 }
 
-.ship-cell {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #000;
-  background-color: #999;
-  box-sizing: border-box;
+.cell.sunk::before,
+.cell.sunk::after {
+  content: "";
+  position: absolute;
+  background-color: black;
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
 }
 
-.ship-cell.top {
-  border-top: 2px solid #000;
+.cell.sunk::before {
+  width: 2px;
+  height: 26px; /* Slightly smaller than cell height */
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.ship-cell.right {
-  border-right: 2px solid #000;
+.cell.sunk::after {
+  width: 26px; /* Slightly smaller than cell width */
+  height: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.ship-cell.bottom {
-  border-bottom: 2px solid #000;
+/* Ensure hit cells are still visible when sunk */
+.cell.hit.sunk {
+  background-color: #f00;
 }
 
-.ship-cell.left {
-  border-left: 2px solid #000;
+/* Adjust the appearance of sunk ships on the player's board */
+#player-board .cell.ship.sunk {
+  background-color: #666;
 }
 
 .hit {

@@ -14,12 +14,14 @@ class Ship {
 }
 
 class GameBoard {
-  constructor(size = 10) {
+  constructor(size = 10, isPlayerBoard = true) {
     this.size = size;
     this.board = Array(size)
       .fill()
       .map(() => Array(size).fill(null));
     this.ships = [];
+    this.sunkShips = new Set();
+    this.isPlayerBoard = isPlayerBoard;
   }
 
   placeShip(length, row, col, isVertical) {
@@ -28,6 +30,15 @@ class GameBoard {
       const ship = new Ship(coordinates);
       coordinates.forEach(([r, c]) => {
         this.board[r][c] = ship;
+        // Only add visual indicator if it's the player's board
+        if (this.isPlayerBoard) {
+          const cell = document.querySelector(
+            `#player-board .cell[data-row="${r}"][data-col="${c}"]`
+          );
+          if (cell) {
+            cell.classList.add("ship");
+          }
+        }
       });
       this.ships.push(ship);
       return true;
@@ -56,13 +67,32 @@ class GameBoard {
     );
   }
 
+  markShipAsSunk(ship) {
+    ship.coordinates.forEach(([row, col]) => {
+      // Only mark cells as sunk on the board where the ship actually is
+      const cell = document.querySelector(
+        `#${
+          this.isPlayerBoard ? "player" : "computer"
+        }-board .cell[data-row="${row}"][data-col="${col}"]`
+      );
+      if (cell) {
+        cell.classList.add("sunk");
+      }
+    });
+  }
+
   receiveAttack(row, col) {
-    if (this.board[row][col] instanceof Ship) {
-      this.board[row][col].hit(row, col);
-      return "hit";
+    const target = this.board[row][col];
+    if (target instanceof Ship) {
+      target.hit(row, col);
+      if (target.isSunk() && !this.sunkShips.has(target)) {
+        this.sunkShips.add(target);
+        this.markShipAsSunk(target);
+      }
+      return { result: "hit", ship: target };
     } else {
       this.board[row][col] = "miss";
-      return "miss";
+      return { result: "miss", ship: null };
     }
   }
 
@@ -73,8 +103,8 @@ class GameBoard {
 
 class BattleshipGame {
   constructor() {
-    this.playerBoard = new GameBoard();
-    this.computerBoard = new GameBoard();
+    this.playerBoard = new GameBoard(10, true);
+    this.computerBoard = new GameBoard(10, false);
     this.setupEventListeners();
     this.lastHit = null;
     this.hitStack = [];
@@ -111,7 +141,7 @@ class BattleshipGame {
     shipContainer.innerHTML = "";
     shipLengths.forEach((length, index) => {
       const ship = document.createElement("div");
-      ship.className = "ship";
+      ship.className = "ship horizontal"; // Start with horizontal orientation
       ship.id = `ship-${index}`;
       ship.draggable = true;
       ship.dataset.length = length;
@@ -124,28 +154,41 @@ class BattleshipGame {
 
       shipContainer.appendChild(ship);
     });
-    this.updateShipsOrientation();
-  }
-
-  rotateAllShips() {
-    this.shipsAreVertical = !this.shipsAreVertical;
-    this.updateShipsOrientation();
   }
 
   updateShipsOrientation() {
     const ships = document.querySelectorAll("#ship-container .ship");
     ships.forEach((ship) => {
-      const length = parseInt(ship.dataset.length);
       if (this.shipsAreVertical) {
-        ship.style.flexDirection = "column";
-        ship.style.width = "30px";
-        ship.style.height = `${length * 30}px`;
+        ship.classList.remove("horizontal");
+        ship.classList.add("vertical");
       } else {
-        ship.style.flexDirection = "row";
-        ship.style.width = `${length * 30}px`;
-        ship.style.height = "30px";
+        ship.classList.remove("vertical");
+        ship.classList.add("horizontal");
       }
     });
+  }
+
+  rotateShips() {
+    this.shipsAreVertical = !this.shipsAreVertical;
+    this.updateShipsOrientation();
+  }
+
+  placeShipOnBoard(shipElement, length, row, col, isVertical) {
+    for (let i = 0; i < length; i++) {
+      const cellRow = isVertical ? row + i : row;
+      const cellCol = isVertical ? col : col + i;
+      const cell = document.querySelector(
+        `#player-board .cell[data-row="${cellRow}"][data-col="${cellCol}"]`
+      );
+      cell.classList.add("ship");
+    }
+
+    shipElement.remove();
+
+    if (document.querySelectorAll("#ship-container .ship").length === 0) {
+      this.allShipsPlaced();
+    }
   }
 
   setupDragAndDrop() {
@@ -182,15 +225,12 @@ class BattleshipGame {
     const shipId = e.dataTransfer.getData("text");
     const ship = document.getElementById(shipId);
     const length = parseInt(ship.dataset.length);
-    const isVertical = this.shipsAreVertical;
+    const isVertical = ship.classList.contains("vertical");
 
-    const { offsetX, offsetY } = JSON.parse(
-      e.dataTransfer.getData("application/json")
-    );
-
-    const cellSize = 30;
-    const dropX = e.clientX - offsetX - e.target.getBoundingClientRect().left;
-    const dropY = e.clientY - offsetY - e.target.getBoundingClientRect().top;
+    const cellRect = e.target.getBoundingClientRect();
+    const cellSize = cellRect.width; // Assuming square cells
+    const dropX = e.clientX - cellRect.left;
+    const dropY = e.clientY - cellRect.top;
 
     const startCol = Math.floor(dropX / cellSize);
     const startRow = Math.floor(dropY / cellSize);
@@ -200,37 +240,6 @@ class BattleshipGame {
 
     if (this.playerBoard.placeShip(length, row, col, isVertical)) {
       this.placeShipOnBoard(ship, length, row, col, isVertical);
-    }
-  }
-
-  placeShipOnBoard(shipElement, length, row, col, isVertical) {
-    for (let i = 0; i < length; i++) {
-      const cellRow = isVertical ? row + i : row;
-      const cellCol = isVertical ? col : col + i;
-      const cell = document.querySelector(
-        `#player-board .cell[data-row="${cellRow}"][data-col="${cellCol}"]`
-      );
-      cell.classList.add("ship-cell");
-
-      // Add border classes
-      if (i === 0) {
-        cell.classList.add(isVertical ? "top" : "left");
-      }
-      if (i === length - 1) {
-        cell.classList.add(isVertical ? "bottom" : "right");
-      }
-      if (!isVertical) {
-        cell.classList.add("top", "bottom");
-      }
-      if (isVertical) {
-        cell.classList.add("left", "right");
-      }
-    }
-
-    shipElement.remove();
-
-    if (document.querySelectorAll("#ship-container .ship").length === 0) {
-      this.allShipsPlaced();
     }
   }
 
@@ -293,7 +302,7 @@ class BattleshipGame {
       .addEventListener("click", this.handlePlayerAttack.bind(this));
   }
 
-  async handlePlayerAttack(e) {
+  handlePlayerAttack(e) {
     if (!this.isPlayerTurn || this.gameOver) {
       return;
     }
@@ -309,15 +318,15 @@ class BattleshipGame {
 
       const row = parseInt(e.target.dataset.row);
       const col = parseInt(e.target.dataset.col);
-      const result = this.computerBoard.receiveAttack(row, col);
+      const { result, ship } = this.computerBoard.receiveAttack(row, col);
       e.target.classList.add(result);
 
       if (result === "hit") {
-        const hitShip = this.computerBoard.board[row][col];
         this.log(`Player hit a ship at (${row}, ${col})!`, "player");
 
-        if (hitShip.isSunk()) {
+        if (ship && ship.isSunk()) {
           this.log("Player sunk a ship!", "player");
+          this.markSunkenShip(ship, false); // false indicates it's the computer's board
         }
       } else {
         this.log(`Player missed at (${row}, ${col}).`, "player");
@@ -326,18 +335,33 @@ class BattleshipGame {
       if (this.computerBoard.allShipsSunk()) {
         this.endGame("Player");
       } else {
-        // Increase the delay here
         document.getElementById("message").textContent =
           "Computer is thinking...";
         setTimeout(() => {
           document.getElementById("message").textContent = "Computer's turn...";
           this.computerPlay();
-        }, 500);
+        }, 2000);
       }
     }
   }
 
-  async computerPlay() {
+  markSunkenShip(ship, isPlayerShip) {
+    const boardPrefix = isPlayerShip ? "player" : "computer";
+    ship.coordinates.forEach(([row, col]) => {
+      const cell = document.querySelector(
+        `#${boardPrefix}-board .cell[data-row="${row}"][data-col="${col}"]`
+      );
+      if (cell) {
+        cell.classList.add("sunk");
+        // For computer's board, we need to explicitly add the 'hit' class
+        if (!isPlayerShip) {
+          cell.classList.add("hit");
+        }
+      }
+    });
+  }
+
+  computerPlay() {
     let row, col;
     if (this.lastHit) {
       ({ row, col } = this.getSmartAttackCoordinates());
@@ -345,25 +369,24 @@ class BattleshipGame {
       ({ row, col } = this.getRandomAttackCoordinates());
     }
 
-    const result = this.playerBoard.receiveAttack(row, col);
+    const { result, ship } = this.playerBoard.receiveAttack(row, col);
     const cell = document.querySelector(
       `#player-board .cell[data-row="${row}"][data-col="${col}"]`
     );
     cell.classList.add(result);
 
     if (result === "hit") {
-      const hitShip = this.playerBoard.board[row][col];
       this.log(`Computer hit a ship at (${row}, ${col})!`, "computer");
 
-      if (hitShip.isSunk()) {
+      if (ship && ship.isSunk()) {
         this.log("Computer sunk a ship!", "computer");
+        this.markSunkenShip(ship, true); // true indicates it's the player's board
         this.resetAttackStrategy();
       } else {
         this.updateAttackStrategy(row, col);
       }
     } else {
       this.log(`Computer missed at (${row}, ${col}).`, "computer");
-      // Instead of calling adjustAttackStrategy, we'll just reset if we're in the middle of a smart attack
       if (this.lastHit) {
         this.resetAttackStrategy();
       }
@@ -497,5 +520,9 @@ class BattleshipGame {
 
 // Initialize the game when the page loads
 document.addEventListener("DOMContentLoaded", () => {
-  new BattleshipGame();
+  const game = new BattleshipGame();
+  game.createShips();
+  document
+    .getElementById("rotate-ships")
+    .addEventListener("click", () => game.rotateShips());
 });
