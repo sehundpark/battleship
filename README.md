@@ -47,11 +47,9 @@
 
 ## 👾 Features
 
-<code>❯ 
-* Placeable ships on battleship board.
+<code>❯ * Placeable ships on battleship board.
 * Intelligent CPU.
-* Game log to view all actions.
-</code>
+* Game log to view all actions.</code>
 
 ---
 
