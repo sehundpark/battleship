@@ -107,6 +107,12 @@ class BattleshipGame {
     this.computerBoard = new GameBoard(10, false);
     this.setupEventListeners();
     this.lastHit = null;
+    this.firstHit = null;
+    this.attackDirection = null;
+    this.triedDirections = new Set();
+    this.currentAttackLength = 1;
+    this.hitQueue = []; // Queue to store hits that haven't been fully explored
+    this.currentTarget = null; // Current hit being explored
     this.isPlayerTurn = true;
     this.gameOver = false;
     this.shipsAreVertical = false;
@@ -361,10 +367,18 @@ class BattleshipGame {
 
   computerPlay() {
     let row, col;
-    if (this.lastHit) {
+    if (this.currentTarget || this.hitQueue.length > 0) {
       ({ row, col } = this.getSmartAttackCoordinates());
     } else {
       ({ row, col } = this.getRandomAttackCoordinates());
+    }
+
+    // Double-check to ensure we're not hitting an already hit cell
+    if (this.isAlreadyHit(row, col)) {
+      console.error(
+        `Attempted to hit an already hit cell at (${row}, ${col}). Choosing new coordinates.`
+      );
+      return this.computerPlay(); // Recursively try again
     }
 
     const { result, ship } = this.playerBoard.receiveAttack(row, col);
@@ -373,27 +387,32 @@ class BattleshipGame {
     );
 
     if (cell) {
-      // Update the cell's appearance based on the attack result
       if (result === "hit") {
         cell.classList.add("hit");
         this.log(`Computer hit a ship at (${row}, ${col})!`, "computer");
 
         if (ship && ship.isSunk()) {
           this.log("Computer sunk a ship!", "computer");
-          this.markSunkenShip(ship, true); // true indicates it's the player's board
-          this.resetAttackStrategy();
+          this.markSunkenShip(ship, true);
+          // Instead of resetting, we move to the next target if available
+          this.currentTarget = null;
+          this.attackDirection = null;
+          this.currentAttackLength = 1;
+          if (this.hitQueue.length === 0) {
+            this.resetAttackStrategy();
+          }
         } else {
           this.updateAttackStrategy(row, col);
         }
       } else {
         cell.classList.add("miss");
         this.log(`Computer missed at (${row}, ${col}).`, "computer");
-        this.lastHit = null; // Reset lastHit on a miss
+        this.attackDirection = null; // Reset direction on miss
+        this.currentAttackLength = 1; // Reset attack length
       }
     } else {
       console.error(`Cell not found for coordinates (${row}, ${col})`);
     }
-
     if (this.playerBoard.allShipsSunk()) {
       this.endGame("Computer");
     } else {
@@ -403,11 +422,14 @@ class BattleshipGame {
   }
 
   getSmartAttackCoordinates() {
-    if (!this.lastHit) {
-      return this.getRandomAttackCoordinates();
+    if (!this.currentTarget && this.hitQueue.length > 0) {
+      this.currentTarget = this.hitQueue.shift();
+      this.firstHit = this.currentTarget;
+      this.attackDirection = null;
+      this.triedDirections.clear();
+      this.currentAttackLength = 1;
     }
 
-    const { row, col } = this.lastHit;
     const directions = [
       { dx: 0, dy: 1 }, // right
       { dx: 1, dy: 0 }, // down
@@ -415,17 +437,48 @@ class BattleshipGame {
       { dx: -1, dy: 0 }, // up
     ];
 
-    for (let dir of directions) {
-      const newRow = row + dir.dx;
-      const newCol = col + dir.dy;
-      if (this.isValidAttack(newRow, newCol)) {
+    while (true) {
+      if (!this.attackDirection) {
+        // If we don't have a direction, choose a new one
+        let directionFound = false;
+        for (let dir of directions) {
+          if (!this.triedDirections.has(JSON.stringify(dir))) {
+            this.attackDirection = dir;
+            this.triedDirections.add(JSON.stringify(dir));
+            this.currentAttackLength = 1;
+            directionFound = true;
+            break;
+          }
+        }
+        if (!directionFound) {
+          // If all directions have been tried for the current target, move to the next target or random
+          if (this.hitQueue.length > 0) {
+            this.currentTarget = null; // This will trigger selecting a new target from the queue
+            return this.getSmartAttackCoordinates();
+          } else {
+            this.resetAttackStrategy();
+            return this.getRandomAttackCoordinates();
+          }
+        }
+      }
+
+      const newRow =
+        this.firstHit.row + this.attackDirection.dx * this.currentAttackLength;
+      const newCol =
+        this.firstHit.col + this.attackDirection.dy * this.currentAttackLength;
+
+      if (
+        this.isValidAttack(newRow, newCol) &&
+        !this.isAlreadyHit(newRow, newCol)
+      ) {
+        this.currentAttackLength++;
         return { row: newRow, col: newCol };
+      } else {
+        // If this direction is exhausted or we hit an already hit cell, reset direction and try again
+        this.attackDirection = null;
+        this.currentAttackLength = 1;
       }
     }
-
-    // If no valid direction, reset and get random coordinates
-    this.resetAttackStrategy();
-    return this.getRandomAttackCoordinates();
   }
 
   isValidAttack(row, col) {
@@ -433,18 +486,41 @@ class BattleshipGame {
       row >= 0 &&
       row < this.playerBoard.size &&
       col >= 0 &&
-      col < this.playerBoard.size &&
-      this.playerBoard.board[row][col] !== "hit" &&
-      this.playerBoard.board[row][col] !== "miss"
+      col < this.playerBoard.size
+    );
+  }
+
+  isAlreadyHit(row, col) {
+    const cell = this.playerBoard.board[row][col];
+    return (
+      cell === "hit" ||
+      cell === "miss" ||
+      (cell instanceof Ship && cell.hits.has(`${row},${col}`))
     );
   }
 
   updateAttackStrategy(row, col) {
+    if (!this.currentTarget) {
+      this.currentTarget = { row, col };
+      this.firstHit = { row, col };
+    } else if (
+      this.currentTarget.row !== row ||
+      this.currentTarget.col !== col
+    ) {
+      // If this hit is not on the current target, add it to the queue
+      this.hitQueue.push({ row, col });
+    }
     this.lastHit = { row, col };
   }
 
   resetAttackStrategy() {
     this.lastHit = null;
+    this.firstHit = null;
+    this.currentTarget = null;
+    this.attackDirection = null;
+    this.triedDirections.clear();
+    this.currentAttackLength = 1;
+    this.hitQueue = [];
   }
 
   log(message, player) {
@@ -458,12 +534,9 @@ class BattleshipGame {
   getRandomAttackCoordinates() {
     let row, col;
     do {
-      row = Math.floor(Math.random() * 10);
-      col = Math.floor(Math.random() * 10);
-    } while (
-      this.playerBoard.board[row][col] === "hit" ||
-      this.playerBoard.board[row][col] === "miss"
-    );
+      row = Math.floor(Math.random() * this.playerBoard.size);
+      col = Math.floor(Math.random() * this.playerBoard.size);
+    } while (this.isAlreadyHit(row, col));
     return { row, col };
   }
 
