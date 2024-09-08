@@ -5,7 +5,6 @@
     <h1 align="center">BATTLESHIP</h1>
 </p>
 <p align="center">
-    <em><code>❯ REPLACE-ME</code></em>
 </p>
 <p align="center">
 	<img src="https://img.shields.io/github/license/sehundpark/battleship?style=flat&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
