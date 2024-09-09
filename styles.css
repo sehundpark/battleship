@@ -163,6 +163,16 @@ body {
   overflow: hidden; /* Ensure content doesn't overflow */
 }
 
+.cell.valid-placement {
+  background-color: rgba(0, 255, 0, 0.3);
+  border: 2px solid #00ff00;
+}
+
+.cell.invalid-placement {
+  background-color: rgba(255, 0, 0, 0.3);
+  border: 2px solid #ff0000;
+}
+
 .cell.sunk::before,
 .cell.sunk::after {
   content: "";

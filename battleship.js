@@ -117,6 +117,8 @@ class BattleshipGame {
     this.gameOver = false;
     this.shipsAreVertical = false;
     this.gameLog = document.getElementById("game-log");
+    this.draggedShipLength = 0;
+    this.draggedShipIsVertical = false;
   }
 
   setupEventListeners() {
@@ -205,6 +207,7 @@ class BattleshipGame {
 
     cells.forEach((cell) => {
       cell.addEventListener("dragover", this.dragOver.bind(this));
+      cell.addEventListener("dragleave", this.dragLeave.bind(this));
       cell.addEventListener("drop", this.drop.bind(this));
     });
   }
@@ -218,14 +221,22 @@ class BattleshipGame {
       "application/json",
       JSON.stringify({ offsetX, offsetY })
     );
+    this.draggedShipLength = parseInt(e.target.dataset.length);
+    this.draggedShipIsVertical = e.target.classList.contains("vertical");
   }
 
   dragOver(e) {
     e.preventDefault();
+    this.highlightCells(e.target, e);
+  }
+
+  dragLeave(e) {
+    this.clearHighlight();
   }
 
   drop(e) {
     e.preventDefault();
+    this.clearHighlight();
     const shipId = e.dataTransfer.getData("text");
     const ship = document.getElementById(shipId);
     const length = parseInt(ship.dataset.length);
@@ -245,6 +256,49 @@ class BattleshipGame {
     if (this.playerBoard.placeShip(length, row, col, isVertical)) {
       this.placeShipOnBoard(ship, length, row, col, isVertical);
     }
+  }
+
+  highlightCells(cell, event) {
+    this.clearHighlight();
+    const cellRect = cell.getBoundingClientRect();
+    const cellSize = cellRect.width; // Assuming square cells
+    const dropX = event.clientX - cellRect.left;
+    const dropY = event.clientY - cellRect.top;
+
+    const startCol = Math.floor(dropX / cellSize);
+    const startRow = Math.floor(dropY / cellSize);
+
+    const row =
+      parseInt(cell.dataset.row) + (this.draggedShipIsVertical ? startRow : 0);
+    const col =
+      parseInt(cell.dataset.col) + (this.draggedShipIsVertical ? 0 : startCol);
+
+    const coordinates = this.playerBoard.getShipCoordinates(
+      this.draggedShipLength,
+      row,
+      col,
+      this.draggedShipIsVertical
+    );
+
+    const isValid = this.playerBoard.canPlaceShip(coordinates);
+
+    coordinates.forEach(([r, c]) => {
+      const highlightCell = document.querySelector(
+        `#player-board .cell[data-row="${r}"][data-col="${c}"]`
+      );
+      if (highlightCell) {
+        highlightCell.classList.add(
+          isValid ? "valid-placement" : "invalid-placement"
+        );
+      }
+    });
+  }
+
+  clearHighlight() {
+    const cells = document.querySelectorAll("#player-board .cell");
+    cells.forEach((cell) => {
+      cell.classList.remove("valid-placement", "invalid-placement");
+    });
   }
 
   renderBoards() {
