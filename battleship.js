@@ -111,8 +111,8 @@ class BattleshipGame {
     this.attackDirection = null;
     this.triedDirections = new Set();
     this.currentAttackLength = 1;
-    this.hitQueue = []; // Queue to store hits that haven't been fully explored
-    this.currentTarget = null; // Current hit being explored
+    this.hitQueue = [];
+    this.currentTarget = null;
     this.isPlayerTurn = true;
     this.gameOver = false;
     this.shipsAreVertical = false;
@@ -131,11 +131,15 @@ class BattleshipGame {
     document
       .getElementById("rotate-ships")
       .addEventListener("click", () => this.rotateShips());
+    document
+      .getElementById("reset-board")
+      .addEventListener("click", () => this.resetBoard());
   }
 
   startSetup() {
     document.getElementById("start-game").style.display = "none";
     document.getElementById("game-content").style.display = "flex";
+    document.getElementById("reset-board").style.display = "inline-block";
     this.renderBoards();
     this.createShips();
     this.setupDragAndDrop();
@@ -146,6 +150,9 @@ class BattleshipGame {
     const shipContainer = document.getElementById("ship-container");
     shipContainer.innerHTML = "";
     shipLengths.forEach((length, index) => {
+      const shipWrapper = document.createElement("div");
+      shipWrapper.className = "ship-wrapper";
+
       const ship = document.createElement("div");
       ship.className = "ship horizontal"; // Start with horizontal orientation
       ship.id = `ship-${index}`;
@@ -158,7 +165,16 @@ class BattleshipGame {
         ship.appendChild(cell);
       }
 
-      shipContainer.appendChild(ship);
+      shipWrapper.appendChild(ship);
+      shipContainer.appendChild(shipWrapper);
+    });
+
+    // Add event listener for ship rotation
+    shipContainer.addEventListener("click", (e) => {
+      const ship = e.target.closest(".ship");
+      if (ship) {
+        ship.classList.toggle("vertical");
+      }
     });
   }
 
@@ -320,19 +336,45 @@ class BattleshipGame {
     }
   }
 
+  resetBoard() {
+    // Clear the player's board
+    this.playerBoard = new GameBoard(10, true);
+    this.renderBoards();
+
+    // Remove all ships from the board
+    const playerBoardElement = document.getElementById("player-board");
+    playerBoardElement.querySelectorAll(".cell").forEach((cell) => {
+      cell.classList.remove("ship");
+    });
+
+    // Recreate the ships in the ship container
+    this.createShips();
+    this.setupDragAndDrop();
+
+    // Hide the "Ready to play" button
+    document.getElementById("ready-to-play").style.display = "none";
+
+    // Show the ship setup container
+    document.getElementById("ship-setup").style.display = "block";
+
+    // Clear any messages
+    document.getElementById("message").textContent = "";
+  }
+
   allShipsPlaced() {
     const shipSetup = document.getElementById("ship-setup");
     if (shipSetup) {
-      shipSetup.remove();
+      shipSetup.style.display = "none";
     }
     document.getElementById("ready-to-play").style.display = "block";
     const message = document.getElementById("message");
     message.textContent =
-      "All ships placed! Click 'Ready to play' to start the game.";
+      "All ships placed! Click 'Ready to play' to start the game, or 'Reset Board' to start over.";
   }
 
   startGame() {
     document.getElementById("ready-to-play").style.display = "none";
+    document.getElementById("reset-board").style.display = "none";
     document.getElementById("message").textContent = "";
     document.getElementById("computer-board-container").style.display = "block";
     document.getElementById("message").textContent =

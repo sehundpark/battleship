@@ -12,7 +12,7 @@ body {
   text-align: center;
   width: 100%;
   max-width: 1200px;
-  padding: 20px 20px;
+  padding: 20px;
 }
 
 #game-content {
@@ -22,8 +22,112 @@ body {
   flex-wrap: wrap;
 }
 
+#setup-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
+}
+
+#ship-setup {
+  margin-bottom: 20px;
+}
+
+#rotate-ships {
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  font-size: 14px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+#rotate-ships:hover {
+  background-color: #45a049;
+}
+
+#ship-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  width: 100%;
+}
+
+.ship-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ship {
+  display: inline-flex;
+  cursor: move;
+}
+
+.ship-cell {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #000;
+  background-color: #999;
+}
+
+.ship.vertical {
+  flex-direction: column;
+}
+
 .board-wrapper {
-  margin: 0 10px;
+  margin-bottom: 20px;
+}
+
+.game-board {
+  display: inline-grid;
+  grid-template-columns: repeat(10, 30px);
+  grid-template-rows: repeat(10, 30px);
+  gap: 1px;
+  background-color: #ccc;
+  border: 1px solid #999;
+}
+
+.cell {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+}
+
+.cell.ship {
+  background-color: #999;
+}
+
+.cell.hit {
+  background-color: #f00;
+}
+
+.cell.miss {
+  background-color: #00f;
+}
+
+.cell.sunk {
+  background-color: #000;
+}
+
+#reset-button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+#reset-board {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 #log-container {
@@ -52,115 +156,40 @@ body {
   color: #ff0000;
 }
 
-#setup-container,
 #computer-board-container {
-  flex: 1;
-  min-width: 300px;
-  margin: 0 10px;
-}
-
-#ship-container {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin: 10px 10px;
-  gap: 10px;
-}
-
-.ship-wrapper {
-  display: flex;
-  align-items: center;
-  margin: 5px 0;
-}
-
-.ship {
-  display: flex;
-  margin: 2px 2px;
-  cursor: move;
-  background-color: #999;
-  border: 1px solid #000;
-}
-
-#ship-container .ship {
-  display: flex;
-  margin: 5px 0;
-  cursor: move;
-}
-
-#ship-container .ship-cell {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #000;
-  background-color: #999;
-  box-sizing: border-box;
-}
-
-#ship-container .ship.vertical {
   flex-direction: column;
-}
-
-#ship-container .ship.horizontal {
-  flex-direction: row;
-}
-
-/* Styles for ships on the board */
-.cell.ship {
-  background-color: #999;
-  border: 1px solid #000;
-}
-
-.rotate-button {
-  background-color: #4caf50;
-  border: none;
-  color: white;
-  padding: 5px 10px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 14px;
-  margin: 2px 2px;
-  cursor: pointer;
-}
-
-#computer-board-container {
-  display: none;
+  align-items: center;
   margin-left: 20px;
 }
 
-/* Only show ships on the player's board */
-#computer-board .ship {
-  background-color: transparent;
-  border: none;
-}
-
-#computer-board .cell:not(.hit):not(.miss) {
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-}
-
-#game-content {
+#game-controls {
+  margin-top: 20px;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
-.game-board {
-  display: inline-grid;
-  grid-template-columns: repeat(10, 30px);
-  grid-template-rows: repeat(10, 30px);
-  gap: 1px;
-  background-color: #ccc;
-  border: 1px solid #999;
+#ready-to-play,
+#start-game {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
-.cell {
-  width: 28px;
-  height: 28px;
-  border: 1px solid #ddd;
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden; /* Ensure content doesn't overflow */
+#ready-to-play:hover,
+#start-game:hover {
+  background-color: #45a049;
+}
+
+#message {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #333;
 }
 
 .cell.valid-placement {
@@ -171,113 +200,4 @@ body {
 .cell.invalid-placement {
   background-color: rgba(255, 0, 0, 0.3);
   border: 2px solid #ff0000;
-}
-
-.cell.sunk::before,
-.cell.sunk::after {
-  content: "";
-  position: absolute;
-  background-color: black;
-  top: 50%;
-  left: 50%;
-  transform-origin: center;
-}
-
-.cell.sunk::before {
-  width: 2px;
-  height: 26px; /* Slightly smaller than cell height */
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.cell.sunk::after {
-  width: 26px; /* Slightly smaller than cell width */
-  height: 2px;
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-/* Ensure hit cells are still visible when sunk */
-.cell.hit.sunk {
-  background-color: #f00;
-}
-
-/* Adjust the appearance of sunk ships on the player's board */
-#player-board .cell.ship.sunk {
-  background-color: #666;
-}
-
-.hit {
-  background-color: #f00;
-}
-
-.miss {
-  background-color: #00f;
-}
-
-.cell.hit {
-  background-color: #f00; /* Red for hits */
-}
-
-.cell.miss {
-  background-color: #00f; /* Blue for misses */
-}
-
-button {
-  font-size: 16px;
-  padding: 10px 20px;
-  cursor: pointer;
-  margin-top: 20px;
-}
-
-#message {
-  margin-top: 20px;
-  font-size: 18px;
-  color: #333;
-  text-align: center;
-}
-
-#ready-to-play {
-  display: none;
-  margin: 20px auto;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-#ready-to-play:hover {
-  background-color: #45a049;
-}
-
-.game-board {
-  display: inline-grid;
-  grid-template-columns: repeat(10, 30px);
-  grid-template-rows: repeat(10, 30px);
-  gap: 0;
-  background-color: #ccc;
-  border: 1px solid #999;
-}
-
-#rotate-ships {
-  margin-bottom: 10px;
-  padding: 5px 10px;
-  font-size: 14px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-#rotate-ships:hover {
-  background-color: #45a049;
-}
-
-#ship-setup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-right: 20px;
 }
