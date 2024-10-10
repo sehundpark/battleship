@@ -5,6 +5,11 @@
     <h1 align="center">BATTLESHIP</h1>
 </p>
 <p align="center">
+    <a href="https://sehundpark.github.io/battleship/">View Demo</a>
+    ·
+    <a href="https://github.com/sehundpark/battleship/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/sehundpark/battleship/issues">Request Feature</a>
 </p>
 <p align="center">
 	<img src="https://img.shields.io/github/license/sehundpark/battleship?style=flat&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
@@ -18,148 +23,81 @@
 <p align="center">
 	<img src="https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=flat&logo=JavaScript&logoColor=black" alt="JavaScript">
 	<img src="https://img.shields.io/badge/HTML5-E34F26.svg?style=flat&logo=HTML5&logoColor=white" alt="HTML5">
+	<img src="https://img.shields.io/badge/CSS3-1572B6.svg?style=flat&logo=CSS3&logoColor=white" alt="CSS3">
 </p>
-
-<br>
-
-##### 🔗 Table of Contents
-
-- [📍 Overview](#-overview)
-- [👾 Features](#-features)
-- [📂 Repository Structure](#-repository-structure)
-- [🧩 Modules](#-modules)
-- [🚀 Getting Started](#-getting-started)
-    - [🔖 Prerequisites](#-prerequisites)
-    - [📦 Installation](#-installation)
-    - [🤖 Usage](#-usage)
-- [📌 Project Roadmap](#-project-roadmap)
-- [🤝 Contributing](#-contributing)
-- [🙌 Acknowledgments](#-acknowledgments)
-
----
 
 ## 📍 Overview
 
-<code>❯ Creation of a standard web-based battleship game using JavaScript, HTML, and CSS. Allows for placement of five ships of predetermined lengths with a rotation function to allow for either horizontal or vertical placement. Player will go against a CPU to see who can sink all enemy ships first.</code>
-
----
+Battleship is a classic naval combat strategy game implemented as a web application. Players can place their ships on a grid and engage in battle against an intelligent computer opponent. The game features interactive ship placement, turn-based gameplay, and a real-time game log.
 
 ## 👾 Features
 
-<code>
-- ** Placeable ships on battleship board.
-- ** Intelligent CPU.
-- ** Game log to view all actions.
-- </code>
-
----
+- Interactive ship placement with drag-and-drop functionality
+- Option to rotate ships for vertical or horizontal placement
+- Intelligent computer opponent with strategic targeting
+- Real-time game log to track all moves and hits
+- Responsive design for various screen sizes
+- Visual feedback for hits, misses, and sunken ships
 
 ## 📂 Repository Structure
 
-```sh
+```
 └── battleship/
     ├── battleship.js
     ├── index.html
     └── styles.css
 ```
 
----
-
 ## 🧩 Modules
 
-<details closed><summary>.</summary>
+<details closed><summary>Root</summary>
 
 | File | Summary |
 | --- | --- |
-| [styles.css](https://github.com/sehundpark/battleship/blob/main/styles.css) | <code>❯ REPLACE-ME</code> |
-| [index.html](https://github.com/sehundpark/battleship/blob/main/index.html) | <code>❯ REPLACE-ME</code> |
-| [battleship.js](https://github.com/sehundpark/battleship/blob/main/battleship.js) | <code>❯ REPLACE-ME</code> |
+| [battleship.js](https://github.com/sehundpark/battleship/blob/main/battleship.js) | Contains the core game logic, including ship placement, attack mechanics, and AI opponent behavior. |
+| [index.html](https://github.com/sehundpark/battleship/blob/main/index.html) | Provides the structure for the game interface, including game boards, controls, and log display. |
+| [styles.css](https://github.com/sehundpark/battleship/blob/main/styles.css) | Defines the visual styling for the game, including board layout, ship appearance, and responsive design. |
 
 </details>
 
----
-
 ## 🚀 Getting Started
 
-### 📦 Installation
-
-Build the project from source:
+### 🔧 Installation
 
 1. Clone the battleship repository:
-```sh
-❯ git clone https://github.com/sehundpark/battleship
+```
+git clone https://github.com/sehundpark/battleship.git
 ```
 
 2. Navigate to the project directory:
-```sh
-❯ cd battleship
+```
+cd battleship
 ```
 
-### 🤖 Usage
+3. Open `index.html` in your web browser to start the game.
 
-To run the project, click the link:
+### 🎮 How to Play
 
-```sh
-[❯ ❯ INSERT-RUN-COMMANDS](https://sehundpark.github.io/battleship/)
-```
+1. Click "Start Game" to begin.
+2. Place your ships on the board by dragging and dropping.
+3. Use the "Rotate Ships" button to change ship orientation.
+4. Once all ships are placed, click "Ready to Play" to start the battle.
+5. Click on the computer's board to make your attacks.
+6. The game log will show the results of each move.
+7. Sink all of the computer's ships to win!
 
----
+## 🌟 Acknowledgments
 
-## 📌 Project Roadmap
-
-- [X] **`Task 1`**: <strike>Allow player to place ships.</strike>
-- [X] **`Task 2`**: <strike>Create a game log.</strike>
-- [ ] **`Task 3`**: Finish optimizing computer intelligence.
-
----
+- The Odin Project
 
 ## 🤝 Contributing
 
 Contributions are welcome! Here are several ways you can contribute:
 
-- **[Report Issues](https://github.com/sehundpark/battleship/issues)**: Submit bugs found or log feature requests for the `battleship` project.
-- **[Submit Pull Requests](https://github.com/sehundpark/battleship/blob/main/CONTRIBUTING.md)**: Review open PRs, and submit your own PRs.
-- **[Join the Discussions](https://github.com/sehundpark/battleship/discussions)**: Share your insights, provide feedback, or ask questions.
+- [Report bugs](https://github.com/sehundpark/battleship/issues)
+- [Suggest enhancements](https://github.com/sehundpark/battleship/issues)
+- [Submit pull requests](https://github.com/sehundpark/battleship/pulls)
 
-<details closed>
-<summary>Contributing Guidelines</summary>
+## 📄 License
 
-1. **Fork the Repository**: Start by forking the project repository to your github account.
-2. **Clone Locally**: Clone the forked repository to your local machine using a git client.
-   ```sh
-   git clone https://github.com/sehundpark/battleship
-   ```
-3. **Create a New Branch**: Always work on a new branch, giving it a descriptive name.
-   ```sh
-   git checkout -b new-feature-x
-   ```
-4. **Make Your Changes**: Develop and test your changes locally.
-5. **Commit Your Changes**: Commit with a clear message describing your updates.
-   ```sh
-   git commit -m 'Implemented new feature x.'
-   ```
-6. **Push to github**: Push the changes to your forked repository.
-   ```sh
-   git push origin new-feature-x
-   ```
-7. **Submit a Pull Request**: Create a PR against the original project repository. Clearly describe the changes and their motivations.
-8. **Review**: Once your PR is reviewed and approved, it will be merged into the main branch. Congratulations on your contribution!
-</details>
-
-<details closed>
-<summary>Contributor Graph</summary>
-<br>
-<p align="left">
-   <a href="https://github.com{/sehundpark/battleship/}graphs/contributors">
-      <img src="https://contrib.rocks/image?repo=sehundpark/battleship">
-   </a>
-</p>
-</details>
-
----
-
-## 🙌 Acknowledgments
-
-- The Odin Project
-
----
+This project is open source and available under the [MIT License](LICENSE).
