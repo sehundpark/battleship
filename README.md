@@ -30,7 +30,7 @@
 
 Battleship is a classic naval combat strategy game implemented as a web application. Players can place their ships on a grid and engage in battle against an intelligent computer opponent. The game features interactive ship placement, turn-based gameplay, and a real-time game log.
 
-<img align="center>![battleship](https://github.com/user-attachments/assets/4058808b-f24f-4e66-972a-397ee1de9fe8)</img>
+![battleship](https://github.com/user-attachments/assets/4058808b-f24f-4e66-972a-397ee1de9fe8)
 
 ## 👾 Features
 
