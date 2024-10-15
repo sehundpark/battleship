@@ -28,18 +28,17 @@
 
 ## 📍 Overview
 
-Battleship is a classic naval combat strategy game implemented as a web application. Players can place their ships on a grid and engage in battle against an intelligent computer opponent. The game features interactive ship placement, turn-based gameplay, and a real-time game log.
+The Battleship Game project is a fully interactive browser-based game built using JavaScript, HTML, and CSS. It demonstrates a strong understanding of object-oriented programming with key classes like Ship, GameBoard, and BattleshipGame, which manage game state, ship placement, and the turn-based logic.
 
 ![battleship](https://github.com/user-attachments/assets/4058808b-f24f-4e66-972a-397ee1de9fe8)
 
 ## 👾 Features
 
-- Interactive ship placement with drag-and-drop functionality
-- Option to rotate ships for vertical or horizontal placement
-- Intelligent computer opponent with strategic targeting
-- Real-time game log to track all moves and hits
-- Responsive design for various screen sizes
-- Visual feedback for hits, misses, and sunken ships
+- Dynamic DOM manipulation for rendering game boards, tracking player and computer hits, misses, and sunk ships.
+- Drag-and-drop functionality for intuitive ship placement, utilizing event listeners for interactivity.
+- AI logic for the computer's attack strategy, implementing random attacks and smart targeting when a ship is hit.
+- Event-driven architecture, with buttons for starting, resetting the game, and rotating ships, ensuring smooth user interactions.
+- Responsive UI using flexbox and CSS Grid to provide a clean, structured layout that adapts to different screen sizes.
 
 ## 📂 Repository Structure
 
